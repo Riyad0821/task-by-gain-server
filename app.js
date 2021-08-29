@@ -18,10 +18,10 @@ app.use("/graphql", cors(), graphqlHTTP({
   graphiql: true,
 }));
 
-mongoose.connect(`mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.l47bs.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`, { promiseLibrary: require("bluebird"), useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(`mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.l47bs.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`, { promiseLibrary: require("bluebird"), useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
   .then(() => {
     app.listen(4000);
-    console.log("connection successful")
+    console.log("connection successful");
   })
 
   .catch((err) => console.error(err));

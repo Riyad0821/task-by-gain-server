@@ -6,6 +6,7 @@ const GraphQLNonNull = require("graphql").GraphQLNonNull;
 const GraphQLID = require("graphql").GraphQLID;
 const StudentModel = require("../models/Student");
 const SubjectModel = require("../models/Subject");
+// const AssignModel = require("../models/Assign");
 
 const studentType = new GraphQLObjectType({
     name: "student",
@@ -54,15 +55,9 @@ const subjectType = new GraphQLObjectType({
 //         },
 //         student: {
 //             type: new GraphQLList(studentType),
-//             resolve: (assign) => {
-//                 return assign.student;
-//             }
 //         },
 //         subject: {
 //             type: new GraphQLList(subjectType),
-//             resolve: (assign) => {
-//                 return assign.subject;
-//             }
 //         }
 //     })
 // });
@@ -98,7 +93,31 @@ const queryType = new GraphQLObjectType({
                 }
             },
             resolve: (root, args) => SubjectModel.findById(args.id)
-        }
+        },
+        // assignsByStudentId: {
+        //     type: assignType,
+        //     args: {
+        //         id: {
+        //             name: "_id",
+        //             type: GraphQLID
+        //         }
+        //     },
+        //     resolve: (root, args) => {
+        //         return StudentModel.findById(args.id).populate("assigns").exec();
+        //     }
+        // },
+        // assignsBySubjectId: {
+        //     type: assignType,
+        //     args: {
+        //         id: {
+        //             name: "_id",
+        //             type: GraphQLID
+        //         }
+        //     },
+        //     resolve: (root, args) => {
+        //         return SubjectModel.findById(args.id).populate("assigns").exec();
+        //     }
+        // }
     })
 });
 
@@ -222,7 +241,26 @@ const mutation = new GraphQLObjectType({
             resolve: (root, args) => {
                 return SubjectModel.findByIdAndRemove(args.id);
             }
-        }
+        },
+        // addAssign: {
+        //     type: assignType,
+        //     args: {
+        //         studentId: {
+        //             type: new GraphQLNonNull(GraphQLID)
+        //         },
+        //         subjectId: {
+        //             type: new GraphQLNonNull(GraphQLID)
+        //         }
+        //     },
+        //     resolve: (root, args) => {
+        //         let assign = new AssignModel({
+        //             student: args.studentId,
+        //             subject: args.subjectId,
+        //             score: args.score
+        //         });
+        //         return assign.save();
+        //     }
+        // }
     })
 });
 
