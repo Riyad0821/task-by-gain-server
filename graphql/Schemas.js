@@ -142,6 +142,26 @@ const mutation = new GraphQLObjectType({
 
             }
         },
+        deleteSubjectFromStudent: {
+            type: studentType,
+            args: {
+                studentId: {
+                    type: new GraphQLNonNull(GraphQLID)
+                },
+                subjectId: {
+                    type: new GraphQLNonNull(GraphQLID)
+                }
+            },
+            resolve: async (root, args) => {
+                const student = await StudentModel.findById(args.studentId);
+                const subject = await SubjectModel.findById(args.subjectId);
+                student.subjects.pull(subject);
+                subject.students.pull(student);
+                await student.save();
+                await subject.save();
+                return student;
+            }
+        },
         updateStudent: {
             type: studentType,
             args: {
