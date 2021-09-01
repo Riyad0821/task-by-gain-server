@@ -6,7 +6,6 @@ const GraphQLNonNull = require("graphql").GraphQLNonNull;
 const GraphQLID = require("graphql").GraphQLID;
 const StudentModel = require("../models/Student");
 const SubjectModel = require("../models/Subject");
-// const AssignModel = require("../models/Assign");
 
 const studentType = new GraphQLObjectType({
     name: "student",
@@ -26,9 +25,13 @@ const studentType = new GraphQLObjectType({
         dob: {
             type: GraphQLString
         },
-        // subjects: [{
-        //     type: subjectType,
-        // }]
+        subjects: {
+            type: new GraphQLList(subjectType),
+            resolve: async function (student) {
+                const subjects = await SubjectModel.find({ students: student._id });
+                return subjects;
+            }
+        }
     })
 });
 
@@ -41,34 +44,24 @@ const subjectType = new GraphQLObjectType({
         name: {
             type: GraphQLString
         },
-        // students: [{
-        //     type: studentType,
-        // }]
+        students: {
+            type: new GraphQLList(studentType),
+            resolve: async function (subject) {
+                const students = await StudentModel.find({ subjects: subject._id });
+                return students;
+            }
+        }
     }),
 });
-
-// const assignType = new GraphQLObjectType({
-//     name: "assign",
-//     fields: () => ({
-//         _id: {
-//             type: GraphQLID
-//         },
-//         student: {
-//             type: new GraphQLList(studentType),
-//         },
-//         subject: {
-//             type: new GraphQLList(subjectType),
-//         }
-//     })
-// });
-
 
 const queryType = new GraphQLObjectType({
     name: "Query",
     fields: () => ({
         students: {
             type: new GraphQLList(studentType),
-            resolve: () => StudentModel.find({})
+            resolve(parent, args) {
+                return StudentModel.find();
+            }
         },
         student: {
             type: studentType,
@@ -82,7 +75,9 @@ const queryType = new GraphQLObjectType({
         },
         subjects: {
             type: new GraphQLList(subjectType),
-            resolve: () => SubjectModel.find({})
+            resolve(parent, args) {
+                return SubjectModel.find();
+            }
         },
         subject: {
             type: subjectType,
@@ -93,31 +88,7 @@ const queryType = new GraphQLObjectType({
                 }
             },
             resolve: (root, args) => SubjectModel.findById(args.id)
-        },
-        // assignsByStudentId: {
-        //     type: assignType,
-        //     args: {
-        //         id: {
-        //             name: "_id",
-        //             type: GraphQLID
-        //         }
-        //     },
-        //     resolve: (root, args) => {
-        //         return StudentModel.findById(args.id).populate("assigns").exec();
-        //     }
-        // },
-        // assignsBySubjectId: {
-        //     type: assignType,
-        //     args: {
-        //         id: {
-        //             name: "_id",
-        //             type: GraphQLID
-        //         }
-        //     },
-        //     resolve: (root, args) => {
-        //         return SubjectModel.findById(args.id).populate("assigns").exec();
-        //     }
-        // }
+        }
     })
 });
 
@@ -138,10 +109,7 @@ const mutation = new GraphQLObjectType({
                 },
                 dob: {
                     type: new GraphQLNonNull(GraphQLString)
-                },
-                // subjects: [{
-                //     type: new GraphQLList(GraphQLID)
-                // }]
+                }
             },
             resolve: (root, args) => {
                 let student = new StudentModel({
@@ -151,6 +119,27 @@ const mutation = new GraphQLObjectType({
                     dob: args.dob
                 });
                 return student.save();
+            }
+        },
+        addSubjectToStudent: {
+            type: studentType,
+            args: {
+                studentId: {
+                    type: new GraphQLNonNull(GraphQLID)
+                },
+                subjectId: {
+                    type: new GraphQLNonNull(GraphQLID)
+                }
+            },
+            resolve: async (root, args) => {
+                const student = await StudentModel.findById(args.studentId);
+                const subject = await SubjectModel.findById(args.subjectId);
+                student.subjects.push(subject);
+                subject.students.push(student);
+                await student.save();
+                await subject.save();
+                return student;
+
             }
         },
         updateStudent: {
@@ -242,27 +231,7 @@ const mutation = new GraphQLObjectType({
                 return SubjectModel.findByIdAndRemove(args.id);
             }
         },
-        // addAssign: {
-        //     type: assignType,
-        //     args: {
-        //         studentId: {
-        //             type: new GraphQLNonNull(GraphQLID)
-        //         },
-        //         subjectId: {
-        //             type: new GraphQLNonNull(GraphQLID)
-        //         }
-        //     },
-        //     resolve: (root, args) => {
-        //         let assign = new AssignModel({
-        //             student: args.studentId,
-        //             subject: args.subjectId,
-        //             score: args.score
-        //         });
-        //         return assign.save();
-        //     }
-        // }
     })
 });
 
 module.exports = new GraphQLSchema({ query: queryType, mutation: mutation });
-
